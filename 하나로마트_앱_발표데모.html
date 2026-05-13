@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>하나로마트 — 데이터 기반 소비자 소통 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script>
+// 기기 감지 — DOM 생성 전에 즉시 실행
+(function(){
+  function detect(){
+    var w = window.innerWidth || document.documentElement.clientWidth;
+    var ua = navigator.userAgent || '';
+    var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isAndroid = /Android/i.test(ua);
+    var cls;
+    if(w <= 600 || (isTouch && (isIOS || isAndroid) && w <= 900)) cls = 'mode-mobile';
+    else if(w <= 1024) cls = 'mode-tablet';
+    else cls = 'mode-pc';
+    document.documentElement.className = cls;
+    document.documentElement.setAttribute('data-mode', cls.replace('mode-',''));
+  }
+  detect();
+  window.addEventListener('resize', detect);
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;outline:none}
+:root{
+  --g0:#0a1f12;--g1:#1B4332;--g2:#2D6A4F;--g3:#40916C;--g4:#74C69D;--g5:#B7E4C7;--g6:#D8F3DC;
+  --orange:#E76F1B;--orange-l:#fff3e0;--blue:#1D4ED8;--blue-l:#EFF6FF;
+  --white:#fff;--off:#F8FAF9;--gray:#6B7280;--lgray:#E5E7EB;--dark:#1E2D24;
+  --r:14px;--rs:10px;--rx:6px;
+  --font:'Noto Sans KR',sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.13);
+}
+html,body{font-family:var(--font);background:var(--off);color:var(--dark);height:100%;overflow:hidden}
+.page{display:none}
+.page.active{display:block}
+
+/* ─── 공통 UI 컴포넌트 ─── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin:18px 0 11px}
+.sh-t{font-size:14px;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:6px}
+.sh-t::before{content:'';width:3px;height:14px;background:var(--g3);border-radius:2px}
+.sh-a{font-size:12px;color:var(--g3);cursor:pointer}
+.kpi-grid{display:grid;gap:10px;margin-bottom:18px}
+.kpi{background:var(--white);border-radius:var(--rs);padding:14px 12px;border:1px solid var(--lgray);position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--ac,var(--g3))}
+.kpi-val{font-size:22px;font-weight:900;color:var(--g1);line-height:1}
+.kpi-lbl{font-size:11px;color:var(--gray);margin-top:5px}
+.kpi-delta{font-size:10px;color:var(--g3);font-weight:600;margin-top:3px}
+.kpi-ico{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:26px;opacity:.1}
+.prod-grid{display:grid;gap:12px;margin-bottom:18px}
+.prod-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);overflow:hidden;cursor:pointer;box-shadow:var(--shadow)}
+.prod-img{height:90px;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--g6);position:relative}
+.prod-badge{position:absolute;top:7px;left:7px;background:var(--g2);color:var(--white);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px}
+.prod-body{padding:10px}
+.prod-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.prod-origin{font-size:10px;color:var(--g3);margin-bottom:4px}
+.prod-price{font-size:14px;font-weight:900;color:var(--orange)}
+.prod-btn{margin-top:7px;width:100%;padding:5px;border:1px solid var(--g4);background:var(--g6);color:var(--g2);border-radius:var(--rx);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.feed{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.feed-item{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:11px 14px;display:flex;align-items:flex-start;gap:10px}
+.feed-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.feed-txt{font-size:12px;flex:1;line-height:1.5}
+.feed-time{font-size:10px;color:var(--gray);white-space:nowrap}
+.trace-hero{background:var(--g1);border-radius:var(--r);padding:18px;color:var(--white);margin-bottom:18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-lg)}
+.trace-ico{font-size:42px;background:rgba(255,255,255,.15);border-radius:var(--rs);width:68px;height:68px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.trace-name{font-size:17px;font-weight:700}
+.trace-code{font-size:10px;opacity:.7;margin-top:3px}
+.trace-tags{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.trace-tag{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(255,255,255,.2);color:var(--white)}
+.trace-tag.hl{background:var(--g4);color:var(--g0)}
+.prod-tabs{display:flex;gap:7px;overflow-x:auto;margin-bottom:14px;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+.prod-tabs::-webkit-scrollbar{display:none}
+.prod-tab{flex-shrink:0;padding:6px 13px;border-radius:20px;border:1px solid var(--lgray);background:var(--white);font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;font-family:var(--font);white-space:nowrap}
+.prod-tab.active{background:var(--g2);color:var(--white);border-color:var(--g2)}
+.iot-grid{display:grid;gap:10px;margin-bottom:18px}
+.iot-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:14px;text-align:center;box-shadow:var(--shadow)}
+.iot-ico{font-size:22px;margin-bottom:6px}
+.iot-val{font-size:20px;font-weight:900}
+.iot-lbl{font-size:10px;color:var(--gray);margin-top:3px}
+.iot-st{font-size:10px;font-weight:600;margin-top:3px;color:var(--g3)}
+.tl{margin-bottom:18px}
+.tl-row{display:flex;gap:12px}
+.tl-spine{display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0}
+.tl-dot{width:13px;height:13px;border-radius:50%;border:3px solid var(--g3);background:var(--white);flex-shrink:0}
+.tl-dot.done{background:var(--g3)}
+.tl-dot.now{background:var(--orange);border-color:var(--orange);box-shadow:0 0 0 3px rgba(231,111,27,.2)}
+.tl-line{width:2px;background:var(--g5);flex:1;margin:3px 0}
+.tl-box{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:12px 14px;margin-bottom:10px;flex:1;box-shadow:var(--shadow)}
+.tl-box.now{border-color:var(--orange)}
+.tl-ttl{font-size:13px;font-weight:700}
+.tl-date{font-size:10px;color:var(--gray);margin-top:2px}
+.tl-detail{font-size:11px;color:var(--gray);margin-top:5px;line-height:1.6}
+.tl-chips{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.tl-chip{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.tl-chip.g{background:var(--g6);color:var(--g2)}
+.tl-chip.b{background:var(--blue-l);color:var(--blue)}
+.tl-chip.o{background:var(--orange-l);color:var(--orange)}
+.rate-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+.stars{display:flex;gap:4px;margin:10px 0}
+.star{font-size:28px;color:var(--lgray);cursor:pointer;-webkit-user-select:none;user-select:none}
+.star.on{color:#FBBF24}
+.rate-btn{width:100%;padding:11px;background:var(--g2);color:var(--white);border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+#map-canvas{width:100%;height:220px;border-radius:var(--r);margin-bottom:14px;box-shadow:var(--shadow);display:block;background:#e8f5e9}
+.map-status{font-size:12px;color:var(--gray);margin-bottom:10px}
+.store-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.store-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:14px;display:flex;gap:12px;box-shadow:var(--shadow)}
+.store-card.nearest{border-left:4px solid var(--g3)}
+.store-ico{width:44px;height:44px;background:var(--g6);border-radius:var(--rx);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.store-nm{font-size:13px;font-weight:700;margin-bottom:2px}
+.store-dist{font-size:11px;color:var(--g3);font-weight:600;margin-bottom:3px}
+.store-addr{font-size:11px;color:var(--gray);margin-bottom:5px}
+.store-tags{display:flex;gap:5px;flex-wrap:wrap}
+.stag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.stag.g{background:var(--g6);color:var(--g2)}
+.stag.o{background:var(--orange-l);color:var(--orange)}
+.chat-head{padding:12px 16px;border-bottom:1px solid var(--lgray);display:flex;align-items:center;gap:10px;background:var(--white);flex-shrink:0}
+.chat-av{width:36px;height:36px;border-radius:50%;background:var(--g3);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.chat-nm{font-size:13px;font-weight:700}
+.chat-st{font-size:10px;color:var(--g3);display:flex;align-items:center;gap:3px}
+.chat-st::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--g3)}
+.chat-msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--off);min-height:0}
+.mw{display:flex;gap:8px;align-items:flex-end}
+.mw.u{flex-direction:row-reverse}
+.mav{width:26px;height:26px;border-radius:50%;background:var(--g6);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.mw.u .mav{background:var(--g2);color:var(--white)}
+.bbl{max-width:78%;padding:10px 13px;border-radius:14px;font-size:12px;line-height:1.65}
+.bbl.bot{background:var(--white);border-radius:3px 14px 14px 14px;color:var(--dark);border:1px solid var(--lgray)}
+.bbl.usr{background:var(--g2);color:var(--white);border-radius:14px 3px 14px 14px}
+.mtime{font-size:10px;color:var(--gray);margin-bottom:3px;align-self:flex-end}
+.typing{display:flex;gap:4px;align-items:center;padding:10px 14px;background:var(--white);border-radius:3px 14px 14px 14px;border:1px solid var(--lgray)}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--gray);display:inline-block;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-cats{display:flex;gap:6px;overflow-x:auto;padding:9px 13px;border-top:1px solid var(--lgray);background:var(--white);flex-shrink:0;-webkit-overflow-scrolling:touch}
+.chat-cats::-webkit-scrollbar{display:none}
+.cat-btn{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--lgray);background:var(--white);font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;font-family:var(--font);white-space:nowrap}
+.cat-btn.active{background:var(--g2);color:var(--white);border-color:var(--g2)}
+.chips{padding:9px 13px;border-top:1px solid var(--lgray);display:flex;gap:6px;flex-wrap:wrap;background:var(--off);flex-shrink:0;max-height:100px;overflow-y:auto}
+.chip{background:var(--white);color:var(--g2);border:1px solid var(--g4);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap}
+.chat-inp-row{display:flex;gap:8px;padding:10px 13px;padding-bottom:max(10px,env(safe-area-inset-bottom));border-top:1px solid var(--lgray);background:var(--white);flex-shrink:0}
+.chat-inp{flex:1;border:1px solid var(--lgray);border-radius:20px;padding:9px 14px;font-size:13px;font-family:var(--font);background:var(--off)}
+.chat-inp:focus{border-color:var(--g3)}
+.send-btn{width:38px;height:38px;border-radius:50%;background:var(--g2);border:none;color:var(--white);font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.profile-hero{background:var(--g1);border-radius:var(--r);padding:20px;color:var(--white);margin-bottom:18px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow-lg)}
+.pav{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;border:3px solid rgba(255,255,255,.4);flex-shrink:0}
+.p-nm{font-size:18px;font-weight:700}
+.p-grade{font-size:11px;opacity:.8;margin-top:3px}
+.p-pts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.p-pt{background:rgba(255,255,255,.18);border-radius:20px;padding:4px 12px;font-size:11px}
+.my-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.my-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:16px;box-shadow:var(--shadow)}
+.my-card-t{font-size:13px;font-weight:700;margin-bottom:12px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--lgray);font-size:12px}
+.drow:last-child{border-bottom:none}
+.dk{color:var(--gray)}.dv{font-weight:600;color:var(--g2)}
+.history-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.history-item{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:11px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
+.h-ico{font-size:22px;width:40px;height:40px;background:var(--g6);border-radius:var(--rx);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.h-nm{font-size:12px;font-weight:600}
+.h-info{font-size:10px;color:var(--gray);margin-top:2px}
+.h-price{font-size:12px;font-weight:700;color:var(--orange);margin-left:auto;white-space:nowrap}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--g1);color:var(--white);padding:11px 22px;border-radius:20px;font-size:12px;font-weight:600;transition:transform .3s;z-index:9999;white-space:nowrap;box-shadow:var(--shadow-lg);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════════════════════════════
+   📱 MOBILE — JS 분기 (html.mode-mobile)
+═══════════════════════════════════════ */
+html.mode-mobile .app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+html.mode-mobile .topbar{height:56px;flex-shrink:0;background:var(--g1);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:10}
+html.mode-mobile .top-logo{font-size:19px;flex-shrink:0}
+html.mode-mobile .top-titles{flex:1;min-width:0}
+html.mode-mobile .top-title{font-size:14px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.mode-mobile .top-sub{font-size:10px;color:var(--g4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.mode-mobile .top-actions{display:flex;gap:5px}
+html.mode-mobile .top-btn{width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:var(--white);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+html.mode-mobile .top-search{display:none}
+html.mode-mobile .sidebar{display:none}
+html.mode-mobile .content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0}
+html.mode-mobile .page{padding:11px 11px 14px}
+html.mode-mobile #page-chat{padding:0;display:none}
+html.mode-mobile #page-chat.active{display:flex;flex-direction:column;flex:1}
+html.mode-mobile .kpi-grid{grid-template-columns:1fr 1fr}
+html.mode-mobile .kpi-val{font-size:19px}
+html.mode-mobile .prod-grid{grid-template-columns:1fr 1fr}
+html.mode-mobile .prod-img{height:82px;font-size:36px}
+html.mode-mobile .iot-grid{grid-template-columns:1fr 1fr}
+html.mode-mobile .home-layout,html.mode-mobile .trace-layout,html.mode-mobile .store-layout{display:flex;flex-direction:column}
+html.mode-mobile .chat-layout{display:flex;flex-direction:column;height:100%}
+html.mode-mobile .chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0}
+html.mode-mobile .chat-side{display:none}
+html.mode-mobile .navbar{height:64px;flex-shrink:0;background:var(--white);border-top:1px solid var(--lgray);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
+html.mode-mobile .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-top:2px solid transparent;cursor:pointer;padding:5px 2px;color:var(--gray);font-family:var(--font);-webkit-user-select:none;user-select:none;touch-action:manipulation;position:relative}
+html.mode-mobile .nav-btn.active{color:var(--g2);border-top-color:var(--g3)}
+html.mode-mobile .nav-ico{font-size:20px;line-height:1;display:block;pointer-events:none}
+html.mode-mobile .nav-lbl{font-size:10px;font-weight:500;display:block;pointer-events:none}
+html.mode-mobile .nav-badge{position:absolute;top:4px;right:calc(50% - 17px);background:var(--orange);color:var(--white);font-size:8px;font-weight:700;padding:1px 5px;border-radius:20px;pointer-events:none}
+html.mode-mobile .toast{bottom:calc(64px + 12px)}
+
+/* ═══════════════════════════════════════
+   📟 TABLET (html.mode-tablet)
+═══════════════════════════════════════ */
+html.mode-tablet .app{display:flex;height:100vh}
+html.mode-tablet .sidebar{width:68px;flex-shrink:0;background:var(--g0);display:flex;flex-direction:column;z-index:10}
+html.mode-tablet .sidebar-header{display:none}
+html.mode-tablet .sidebar-logo-tablet{padding:18px 0 14px;display:flex;justify-content:center;border-bottom:1px solid rgba(255,255,255,.08)}
+html.mode-tablet .sidebar-logo-tablet .sidebar-logo-ico{font-size:24px}
+html.mode-tablet .nav-section{flex:1;padding:8px 7px 0;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+html.mode-tablet .nav-label{display:none}
+html.mode-tablet .nav-section .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 4px;border-radius:var(--rx);cursor:pointer;color:rgba(255,255,255,.55);font-family:var(--font);-webkit-user-select:none;user-select:none;touch-action:manipulation;width:100%;position:relative}
+html.mode-tablet .nav-section .nav-btn.active{background:var(--g2);color:var(--white)}
+html.mode-tablet .nav-section .nav-ico{font-size:21px;line-height:1;display:block;pointer-events:none}
+html.mode-tablet .nav-section .nav-lbl{font-size:9px;font-weight:500;display:block;pointer-events:none}
+html.mode-tablet .nav-section .nav-badge{position:absolute;top:6px;right:6px;background:var(--orange);color:var(--white);font-size:8px;font-weight:700;padding:1px 5px;border-radius:20px;pointer-events:none}
+html.mode-tablet .sidebar-footer{padding:10px 7px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:center}
+html.mode-tablet .user-chip{display:none}
+html.mode-tablet .user-mini{width:36px;height:36px;border-radius:50%;background:var(--g3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--white)}
+html.mode-tablet .main{flex:1;display:flex;flex-direction:column;min-width:0}
+html.mode-tablet .topbar{height:60px;flex-shrink:0;background:var(--white);border-bottom:1px solid var(--lgray);display:flex;align-items:center;padding:0 18px;gap:10px}
+html.mode-tablet .top-logo{display:none}
+html.mode-tablet .top-titles{flex:1;min-width:0}
+html.mode-tablet .top-title{font-size:15px;font-weight:700;color:var(--dark)}
+html.mode-tablet .top-sub{font-size:11px;color:var(--gray);margin-top:1px}
+html.mode-tablet .top-actions{display:flex;gap:7px;align-items:center}
+html.mode-tablet .top-search{display:flex;align-items:center;gap:7px;background:var(--off);border:1px solid var(--lgray);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--gray)}
+html.mode-tablet .top-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--lgray);background:var(--white);color:var(--dark);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+html.mode-tablet .content{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0}
+html.mode-tablet .page{padding:18px 20px 22px}
+html.mode-tablet #page-chat{padding:0;display:none}
+html.mode-tablet #page-chat.active{display:flex;flex-direction:column;flex:1;height:calc(100vh - 60px)}
+html.mode-tablet .kpi-grid{grid-template-columns:1fr 1fr}
+html.mode-tablet .prod-grid{grid-template-columns:1fr 1fr}
+html.mode-tablet .iot-grid{grid-template-columns:repeat(4,1fr)}
+html.mode-tablet .home-layout,html.mode-tablet .trace-layout,html.mode-tablet .store-layout{display:flex;flex-direction:column}
+html.mode-tablet .my-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html.mode-tablet .chat-layout{display:flex;flex-direction:column;height:100%}
+html.mode-tablet .chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0}
+html.mode-tablet .chat-side{display:none}
+html.mode-tablet .navbar{display:none}
+
+/* ═══════════════════════════════════════
+   🖥️ PC (html.mode-pc)
+═══════════════════════════════════════ */
+html.mode-pc .app{display:flex;height:100vh}
+html.mode-pc .sidebar{width:240px;flex-shrink:0;background:var(--g0);display:flex;flex-direction:column;z-index:10}
+html.mode-pc .sidebar-logo-tablet{display:none}
+html.mode-pc .sidebar-header{padding:22px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+html.mode-pc .sidebar-logo{display:flex;align-items:center;gap:11px}
+html.mode-pc .sidebar-logo-ico{font-size:26px}
+html.mode-pc .sidebar-logo-txt{color:var(--white);font-size:15px;font-weight:700}
+html.mode-pc .sidebar-logo-sub{color:var(--g4);font-size:10px;margin-top:2px;letter-spacing:.5px}
+html.mode-pc .nav-section{flex:1;padding:14px 11px 0;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+html.mode-pc .nav-label{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:2px;font-weight:500;margin:0 7px 7px;text-transform:uppercase;display:block}
+html.mode-pc .nav-section .nav-btn{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:var(--rx);cursor:pointer;color:rgba(255,255,255,.55);font-family:var(--font);font-size:13px;-webkit-user-select:none;user-select:none;width:100%;position:relative}
+html.mode-pc .nav-section .nav-btn:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9)}
+html.mode-pc .nav-section .nav-btn.active{background:var(--g2);color:var(--white)}
+html.mode-pc .nav-section .nav-ico{font-size:17px;width:19px;text-align:center;display:block;pointer-events:none}
+html.mode-pc .nav-section .nav-lbl{display:block;flex:1;pointer-events:none}
+html.mode-pc .nav-section .nav-badge{margin-left:auto;background:var(--orange);color:var(--white);font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;pointer-events:none;position:static}
+html.mode-pc .sidebar-footer{padding:14px 11px;border-top:1px solid rgba(255,255,255,.08)}
+html.mode-pc .user-mini{display:none}
+html.mode-pc .user-chip{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--rx);background:rgba(255,255,255,.06)}
+html.mode-pc .user-av{width:30px;height:30px;border-radius:50%;background:var(--g3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--white)}
+html.mode-pc .user-info-nm{color:rgba(255,255,255,.85);font-size:12px;font-weight:500}
+html.mode-pc .user-info-grade{color:var(--g4);font-size:10px;margin-top:1px}
+html.mode-pc .main{flex:1;display:flex;flex-direction:column;min-width:0}
+html.mode-pc .topbar{height:60px;flex-shrink:0;background:var(--white);border-bottom:1px solid var(--lgray);display:flex;align-items:center;padding:0 26px;gap:14px}
+html.mode-pc .top-logo{display:none}
+html.mode-pc .top-titles{flex:1}
+html.mode-pc .top-title{font-size:16px;font-weight:700;color:var(--dark)}
+html.mode-pc .top-sub{font-size:12px;color:var(--gray);margin-top:1px}
+html.mode-pc .top-actions{display:flex;align-items:center;gap:9px}
+html.mode-pc .top-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--lgray);background:var(--white);color:var(--dark);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+html.mode-pc .top-search{display:flex;align-items:center;gap:7px;background:var(--off);border:1px solid var(--lgray);border-radius:20px;padding:7px 16px;font-size:12px;color:var(--gray);min-width:200px}
+html.mode-pc .content{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0}
+html.mode-pc .page{padding:26px 30px 30px}
+html.mode-pc #page-chat{padding:0;display:none}
+html.mode-pc #page-chat.active{display:flex;flex:1;height:calc(100vh - 60px)}
+html.mode-pc .kpi-grid{grid-template-columns:repeat(4,1fr)}
+html.mode-pc .prod-grid{grid-template-columns:repeat(4,1fr)}
+html.mode-pc .iot-grid{grid-template-columns:repeat(4,1fr)}
+html.mode-pc .home-layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
+html.mode-pc .trace-layout{display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:start}
+html.mode-pc .store-layout{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+html.mode-pc .my-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+html.mode-pc .chat-layout{display:grid;grid-template-columns:1fr 280px;width:100%;height:100%}
+html.mode-pc .chat-wrap{display:flex;flex-direction:column;border-right:1px solid var(--lgray);min-height:0}
+html.mode-pc .chat-side{background:var(--white);padding:18px;overflow-y:auto}
+html.mode-pc .chat-side-t{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--dark)}
+html.mode-pc .rec-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--lgray)}
+html.mode-pc .rec-item:last-child{border-bottom:none}
+html.mode-pc .rec-ico{font-size:20px;width:38px;height:38px;background:var(--g6);border-radius:var(--rx);display:flex;align-items:center;justify-content:center}
+html.mode-pc .rec-nm{font-size:12px;font-weight:600}
+html.mode-pc .rec-price{font-size:11px;color:var(--orange);font-weight:700;margin-top:1px}
+html.mode-pc .panel-card{background:var(--white);border-radius:var(--rs);border:1px solid var(--lgray);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+html.mode-pc .navbar{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-ico">🌾</div>
+        <div>
+          <div class="sidebar-logo-txt">하나로마트</div>
+          <div class="sidebar-logo-sub">DATA PLATFORM</div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-logo-tablet"><div class="sidebar-logo-ico">🌾</div></div>
+    <nav class="nav-section">
+      <div class="nav-label">메뉴</div>
+      <div class="nav-btn active" data-page="home"><span class="nav-ico">🏠</span><span class="nav-lbl">홈</span></div>
+      <div class="nav-btn" data-page="trace"><span class="nav-ico">🌱</span><span class="nav-lbl">생산이력</span><span class="nav-badge">N</span></div>
+      <div class="nav-btn" data-page="chat"><span class="nav-ico">💬</span><span class="nav-lbl">AI 소통</span></div>
+      <div class="nav-btn" data-page="store"><span class="nav-ico">📍</span><span class="nav-lbl">매장 찾기</span></div>
+      <div class="nav-btn" data-page="my"><span class="nav-ico">👤</span><span class="nav-lbl">MY 페이지</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-av">김</div>
+        <div><div class="user-info-nm">김농협</div><div class="user-info-grade">🌾 단골 회원</div></div>
+      </div>
+      <div class="user-mini">김</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="top-logo">🌾</div>
+      <div class="top-titles">
+        <div class="top-title" id="top-title">홈 대시보드</div>
+        <div class="top-sub" id="top-sub">오늘의 신선 농산물 정보</div>
+      </div>
+      <div class="top-actions">
+        <div class="top-search">🔍 &nbsp;상품 검색</div>
+        <button class="top-btn">🔔</button>
+        <button class="top-btn">🛒</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page active" id="page-home">
+        <div class="kpi-grid">
+          <div class="kpi" style="--ac:var(--g3)"><div class="kpi-val">47</div><div class="kpi-lbl">연동 농가 수</div><div class="kpi-delta">↑ 5 이번달 신규</div><div class="kpi-ico">🏡</div></div>
+          <div class="kpi" style="--ac:var(--orange)"><div class="kpi-val">1,240</div><div class="kpi-lbl">이달 소비자 리뷰</div><div class="kpi-delta">↑ 18% 전월 대비</div><div class="kpi-ico">⭐</div></div>
+          <div class="kpi" style="--ac:var(--blue)"><div class="kpi-val">98%</div><div class="kpi-lbl">원산지 인증률</div><div class="kpi-delta">IoT 자동 검증</div><div class="kpi-ico">✅</div></div>
+          <div class="kpi" style="--ac:var(--g4)"><div class="kpi-val">0건</div><div class="kpi-lbl">농약 감지 이상</div><div class="kpi-delta">이번주 기준</div><div class="kpi-ico">🛡️</div></div>
+        </div>
+        <div class="home-layout">
+          <div>
+            <div class="sh"><div class="sh-t">오늘의 신선 추천</div><span class="sh-a">전체 보기 →</span></div>
+            <div class="prod-grid" id="home-prod-grid"></div>
+          </div>
+          <div>
+            <div class="sh"><div class="sh-t">농가 소통 알림</div><span class="sh-a">더 보기 →</span></div>
+            <div class="feed">
+              <div class="feed-item"><div class="feed-dot" style="background:var(--g3)"></div><div class="feed-txt">구매하신 <strong>시금치 농가(전남 나주)</strong>에서 영농일지 업데이트</div><div class="feed-time">방금</div></div>
+              <div class="feed-item"><div class="feed-dot" style="background:var(--orange)"></div><div class="feed-txt">구매 패턴 분석 기반 <strong>맞춤 할인쿠폰</strong> 도착 (채소류 15%)</div><div class="feed-time">1시간 전</div></div>
+              <div class="feed-item"><div class="feed-dot" style="background:var(--g3)"></div><div class="feed-txt">단골 농가 <strong>홍성 자연농원</strong> 신상품 브로콜리 입고</div><div class="feed-time">어제</div></div>
+              <div class="feed-item"><div class="feed-dot" style="background:var(--blue)"></div><div class="feed-txt">농촌진흥청 API — <strong>제철 농산물 인증 데이터</strong> 갱신 완료</div><div class="feed-time">2일 전</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-trace">
+        <div class="trace-layout">
+          <div>
+            <div class="sh"><div class="sh-t">상품 선택</div></div>
+            <div class="prod-tabs" id="prod-tabs"></div>
+            <div id="trace-hero-wrap"></div>
+            <div class="sh"><div class="sh-t">IoT 실시간 센서 데이터</div></div>
+            <div class="iot-grid" id="iot-wrap"></div>
+            <div class="sh"><div class="sh-t">영농 이력 타임라인 (IoT 자동 생성)</div></div>
+            <div class="tl" id="tl-wrap"></div>
+          </div>
+          <div>
+            <div class="sh"><div class="sh-t">소비자 평가</div></div>
+            <div class="rate-card">
+              <div style="font-size:13px;font-weight:600" id="rate-title">이 상품 품질을 평가해 주세요</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:3px" id="rate-sub">농가에 실시간 전달됩니다</div>
+              <div class="stars" id="stars">
+                <span class="star" data-n="1">★</span><span class="star" data-n="2">★</span><span class="star" data-n="3">★</span><span class="star" data-n="4">★</span><span class="star" data-n="5">★</span>
+              </div>
+              <button class="rate-btn" id="rate-btn">평가 제출 — 농가에 바로 전달</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-chat">
+        <div class="chat-layout">
+          <div class="chat-wrap">
+            <div class="chat-head">
+              <div class="chat-av">🤖</div>
+              <div><div class="chat-nm">하나로 AI 상담</div><div class="chat-st">구매이력 분석 · 실시간 응답</div></div>
+            </div>
+            <div class="chat-msgs" id="chat-msgs"></div>
+            <div class="chat-cats" id="chat-cats"></div>
+            <div class="chips" id="chip-wrap"></div>
+            <div class="chat-inp-row">
+              <input class="chat-inp" id="chat-input" type="text" placeholder="궁금한 점을 물어보세요...">
+              <button class="send-btn" id="send-btn">➤</button>
+            </div>
+          </div>
+          <div class="chat-side">
+            <div class="panel-card">
+              <div class="chat-side-t">📊 내 구매 패턴</div>
+              <div class="drow"><span class="dk">선호 카테고리</span><span class="dv">채소 72%</span></div>
+              <div class="drow"><span class="dk">선호 원산지</span><span class="dv">국내산 98%</span></div>
+              <div class="drow"><span class="dk">월 평균 구매</span><span class="dv">34,000원</span></div>
+              <div class="drow" style="border:none"><span class="dk">이달 절약</span><span class="dv" style="color:var(--orange)">14,300원</span></div>
+            </div>
+            <div class="panel-card">
+              <div class="chat-side-t">🌾 AI 추천 상품</div>
+              <div class="rec-item"><div class="rec-ico">🥦</div><div><div class="rec-nm">유기농 브로콜리</div><div class="rec-price">3,200원</div></div></div>
+              <div class="rec-item"><div class="rec-ico">🥬</div><div><div class="rec-nm">로메인 상추</div><div class="rec-price">2,100원</div></div></div>
+              <div class="rec-item" style="border:none"><div class="rec-ico">🧅</div><div><div class="rec-nm">햇 양파</div><div class="rec-price">2,800원</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-store">
+        <div class="store-layout">
+          <div>
+            <div class="sh"><div class="sh-t">현재 위치 기반 매장</div></div>
+            <p class="map-status" id="map-status">현재 위치를 불러오는 중...</p>
+            <canvas id="map-canvas"></canvas>
+          </div>
+          <div>
+            <div class="sh"><div class="sh-t">가까운 매장</div></div>
+            <div class="store-list" id="store-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-my">
+        <div class="profile-hero">
+          <div class="pav">김</div>
+          <div><div class="p-nm">김농협 고객님</div><div class="p-grade">🌾 단골 농산물 고객 · 가입 2년</div>
+          <div class="p-pts"><span class="p-pt">포인트 <strong>12,400P</strong></span><span class="p-pt">이달 구매 <strong>34,000원</strong></span></div></div>
+        </div>
+        <div class="sh"><div class="sh-t">최근 구매 내역</div><span class="sh-a">전체 보기 →</span></div>
+        <div class="history-list">
+          <div class="history-item"><div class="h-ico">🥦</div><div><div class="h-nm">유기농 브로콜리 (전남 해남)</div><div class="h-info">2025.05.12 · 무농약 · IoT 검증</div></div><div class="h-price">3,200원</div></div>
+          <div class="history-item"><div class="h-ico">🍎</div><div><div class="h-nm">사과 부사 (경북 영주)</div><div class="h-info">2025.05.10 · GAP · IoT 검증</div></div><div class="h-price">8,500원</div></div>
+          <div class="history-item"><div class="h-ico">🧅</div><div><div class="h-nm">햇 양파 (경남 창녕)</div><div class="h-info">2025.05.08 · 일반 인증</div></div><div class="h-price">2,800원</div></div>
+          <div class="history-item"><div class="h-ico">🥬</div><div><div class="h-nm">시금치 (전남 나주)</div><div class="h-info">2025.05.05 · 친환경 · IoT 검증</div></div><div class="h-price">2,100원</div></div>
+        </div>
+        <div class="my-cards">
+          <div class="my-card"><div class="my-card-t">📊 데이터 기반 구매 분석</div><div class="drow"><span class="dk">선호 카테고리</span><span class="dv">채소 72%</span></div><div class="drow"><span class="dk">선호 원산지</span><span class="dv">국내산 98%</span></div><div class="drow"><span class="dk">이달 절약</span><span class="dv">14,300원</span></div><div class="drow"><span class="dk">생산이력 조회</span><span class="dv">23회</span></div></div>
+          <div class="my-card"><div class="my-card-t">🌾 단골 농가 현황</div><div class="drow"><span class="dk">전남해남 자연농원</span><span class="dv">구독중</span></div><div class="drow"><span class="dk">홍성 자연농원</span><span class="dv">구독중</span></div><div class="drow"><span class="dk">경북 영주 과수원</span><span class="dv">구독중</span></div><div class="drow"><span class="dk">관심 농가 알림</span><span class="dv">ON</span></div></div>
+          <div class="my-card"><div class="my-card-t">✅ 이달 IoT 확인 내역</div><div class="drow"><span class="dk">생산이력 QR 스캔</span><span class="dv">8회</span></div><div class="drow"><span class="dk">농약감지 데이터 확인</span><span class="dv">6회</span></div><div class="drow"><span class="dk">농가 소식 열람</span><span class="dv">12회</span></div><div class="drow"><span class="dk">AI 상담 이용</span><span class="dv">5회</span></div></div>
+          <div class="my-card"><div class="my-card-t">⚙️ 계정 설정</div><div class="drow"><span class="dk">농가 신상품 알림</span><span class="dv">ON</span></div><div class="drow"><span class="dk">할인쿠폰 알림</span><span class="dv">ON</span></div><div class="drow"><span class="dk">데이터 분석 동의</span><span class="dv">ON</span></div><div class="drow"><span class="dk">개인정보 처리방침</span><span class="dv" style="color:var(--blue)">보기</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="navbar">
+      <div class="nav-btn active" data-page="home"><span class="nav-ico">🏠</span><span class="nav-lbl">홈</span></div>
+      <div class="nav-btn" data-page="trace"><span class="nav-ico">🌱</span><span class="nav-lbl">생산이력</span><span class="nav-badge">N</span></div>
+      <div class="nav-btn" data-page="chat"><span class="nav-ico">💬</span><span class="nav-lbl">AI소통</span></div>
+      <div class="nav-btn" data-page="store"><span class="nav-ico">📍</span><span class="nav-lbl">매장</span></div>
+      <div class="nav-btn" data-page="my"><span class="nav-ico">👤</span><span class="nav-lbl">MY</span></div>
+    </nav>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var PRODS={
+broccoli:{tab:'🥦 브로콜리',ico:'🥦',name:'유기농 브로콜리',badge:'무농약',code:'HM-2025-04821',farm:'전남해남 자연농원',origin:'전남 해남',price:'3,200원',tags:['🌱 무농약 인증','✓ IoT 자동기록','✓ 블록체인 검증'],
+iot:[{ico:'🌡️',val:'6.4',lbl:'토양 pH',st:'최적 (6.0~7.0)',c:'var(--g2)'},{ico:'💧',val:'68%',lbl:'토양 수분',st:'정상',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'🌤️',val:'18°C',lbl:'평균 기온',st:'재배 적합',c:'var(--orange)'}],
+tl:[{done:true,ttl:'파종',date:'2025.02.10',detail:'토양수분 68% · 기온 12°C · IoT 센서 자동 기록',chips:'g:자동기록,b:농진청 기준'},
+{done:true,ttl:'생장 관리',date:'2025.03.01 ~ 04.20',detail:'드론 촬영 12회 · 병해충 없음 · 농약 감지 0건',chips:'g:드론기록,g:농약 0건,b:5G 전송'},
+{done:true,ttl:'수확',date:'2025.05.08',detail:'수확량 340kg · QC 통과 · 블록체인 타임스탬프 생성',chips:'o:블록체인,g:QC 통과'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.12',detail:'하나로마트 앱 등록 · QR 조회 가능 · 실시간 재고 연동',chips:'o:판매중,b:QR 활성'}]},
+apple:{tab:'🍎 사과',ico:'🍎',name:'사과 (부사)',badge:'친환경',code:'HM-2025-03912',farm:'경북 영주 과수원',origin:'경북 영주',price:'8,500원',tags:['✓ 친환경 인증','✓ IoT 자동기록','✓ 블록체인 검증'],
+iot:[{ico:'☀️',val:'6.2',lbl:'토양 pH',st:'최적 범위',c:'var(--g2)'},{ico:'💧',val:'54%',lbl:'토양 수분',st:'적정',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'🌡️',val:'14°C',lbl:'평균 기온',st:'재배 적합',c:'var(--orange)'}],
+tl:[{done:true,ttl:'묘목 식재',date:'2024.04.05',detail:'경북 영주 해발 300m · 일조량 8시간 · IoT 기상센서',chips:'g:자동기록,b:농진청 기준'},
+{done:true,ttl:'착과 관리',date:'2024.06 ~ 09',detail:'드론 과실 촬영 24회 · 병충해 없음 · 봉지 씌우기 완료',chips:'g:드론기록,g:병해 0건'},
+{done:true,ttl:'수확',date:'2025.04.28',detail:'수확량 2.1톤 · 당도 14Brix · GAP 인증 통과',chips:'o:블록체인,g:GAP 통과'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.02',detail:'냉장 검증 · 하나로마트 입고 · QR 이력 활성화',chips:'o:판매중,b:QR 활성'}]},
+onion:{tab:'🧅 양파',ico:'🧅',name:'햇 양파',badge:'',code:'HM-2025-05103',farm:'경남 창녕 대합농협',origin:'경남 창녕',price:'2,800원',tags:['✓ 국내산','✓ IoT 자동기록'],
+iot:[{ico:'🌡️',val:'6.8',lbl:'토양 pH',st:'양파 최적',c:'var(--g2)'},{ico:'💧',val:'72%',lbl:'토양 수분',st:'정상',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'🌬️',val:'22°C',lbl:'평균 기온',st:'수확 적기',c:'var(--orange)'}],
+tl:[{done:true,ttl:'파종',date:'2024.10.12',detail:'창녕 점질토 · 발아율 94% · 기상 IoT 자동 기록',chips:'g:자동기록,g:발아율 우수'},
+{done:true,ttl:'재배 관리',date:'2024.11 ~ 2025.04',detail:'월동 재배 · 드론 모니터링 8회 · 병해충 없음',chips:'g:드론기록,g:병해 0건'},
+{done:true,ttl:'수확',date:'2025.05.03',detail:'수확량 4.8톤 · 구 직경 평균 8.2cm · 상품률 96%',chips:'o:블록체인,g:수확 완료'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.06',detail:'망 포장 · 하나로마트 전 지점 입고',chips:'o:판매중,b:QR 활성'}]},
+carrot:{tab:'🥕 당근',ico:'🥕',name:'국산 당근',badge:'제주산',code:'HM-2025-04455',farm:'제주 애월 하나로농원',origin:'제주',price:'1,900원',tags:['✓ 제주산','✓ IoT 자동기록','✓ 블록체인 검증'],
+iot:[{ico:'🌡️',val:'6.5',lbl:'토양 pH',st:'최적',c:'var(--g2)'},{ico:'💧',val:'61%',lbl:'토양 수분',st:'적정',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'🌊',val:'18°C',lbl:'평균 기온',st:'제주 해풍',c:'var(--orange)'}],
+tl:[{done:true,ttl:'파종',date:'2025.01.20',detail:'제주 화산토 · 미네랄 풍부 · 5G IoT 실시간 전송',chips:'g:자동기록,b:5G 전송'},
+{done:true,ttl:'재배 관리',date:'2025.02 ~ 04',detail:'제주 해풍 자연재배 · 드론 촬영 6회 · 무화학비료',chips:'g:드론기록,g:무화학비료'},
+{done:true,ttl:'수확',date:'2025.05.01',detail:'수확량 1.2톤 · 선별 완료 · 블록체인 인증 등록',chips:'o:블록체인,g:선별 완료'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.04',detail:'제주 직배송 · 하나로마트 입고 · QR 이력 활성화',chips:'o:판매중,b:QR 활성'}]},
+grape:{tab:'🍇 샤인머스켓',ico:'🍇',name:'샤인머스켓',badge:'GAP인증',code:'HM-2025-04677',farm:'경북 상주 포도연구소농원',origin:'경북 상주',price:'12,000원',tags:['✓ GAP 인증','✓ IoT 자동기록','✓ 블록체인 검증'],
+iot:[{ico:'🌡️',val:'6.1',lbl:'토양 pH',st:'포도 최적',c:'var(--g2)'},{ico:'💧',val:'58%',lbl:'토양 수분',st:'적정',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'☀️',val:'24°C',lbl:'평균 기온',st:'일조량 양호',c:'var(--orange)'}],
+tl:[{done:true,ttl:'신초 관리',date:'2025.03.10',detail:'동계 전정 · 신초 유인 · IoT 24시간 모니터링',chips:'g:자동기록,b:IoT 모니터링'},
+{done:true,ttl:'착과·봉지 씌우기',date:'2025.04.15',detail:'착과 조절 · 봉지 씌우기 100% · 드론 촬영 10회',chips:'g:드론기록,g:봉지 완료'},
+{done:true,ttl:'수확',date:'2025.05.08',detail:'당도 20Brix · 알 크기 균일 · GAP 인증 통과',chips:'o:블록체인,g:GAP 통과'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.10',detail:'냉장 직배송 · 하나로마트 프리미엄관 입고',chips:'o:판매중,b:QR 활성'}]},
+corn:{tab:'🌽 옥수수',ico:'🌽',name:'찰옥수수',badge:'',code:'HM-2025-05201',farm:'강원 홍천 옥수수마을농협',origin:'강원 홍천',price:'4,500원',tags:['✓ 강원 인증','✓ IoT 자동기록'],
+iot:[{ico:'🌡️',val:'6.3',lbl:'토양 pH',st:'옥수수 최적',c:'var(--g2)'},{ico:'💧',val:'70%',lbl:'토양 수분',st:'정상',c:'var(--blue)'},{ico:'🛡️',val:'0건',lbl:'농약 감지',st:'이상 없음',c:'var(--g3)'},{ico:'❄️',val:'16°C',lbl:'평균 기온',st:'고랭지',c:'var(--orange)'}],
+tl:[{done:true,ttl:'파종',date:'2025.04.18',detail:'강원 홍천 고랭지 해발 250m · 일교차 IoT 기록',chips:'g:자동기록,g:고랭지 재배'},
+{done:true,ttl:'재배 관리',date:'2025.04.20 ~ 05.10',detail:'드론 생육 촬영 4회 · 자연 강우 · 무화학비료',chips:'g:드론기록,g:무화학비료'},
+{done:true,ttl:'수확',date:'2025.05.11',detail:'수확량 0.8톤 · 당일 수확 신선 배송',chips:'o:블록체인,g:당일 수확'},
+{done:false,now:true,ttl:'매장 입고 · 현재',date:'2025.05.12',detail:'당일 수확 당일 입고 · 최고 신선도',chips:'o:판매중,b:당일 신선'}]}
+};
+
+var STORES=[
+{name:'하나로마트 홍은점',lat:37.5895,lng:126.9381,addr:'서울 서대문구 홍은동',tags:['영업중 ~21:00','로컬푸드 입고','주말 할인전']},
+{name:'하나로마트 은평점',lat:37.6024,lng:126.9284,addr:'서울 은평구 역촌동',tags:['영업중 ~20:00','채소 30% 할인']},
+{name:'하나로마트 마포점',lat:37.5567,lng:126.9100,addr:'서울 마포구 성산동',tags:['영업중 ~21:30','친환경 특설관']},
+{name:'하나로마트 서대문점',lat:37.5797,lng:126.9368,addr:'서울 서대문구 연희동',tags:['영업중 ~20:30','로컬푸드 신상']},
+{name:'하나로마트 용산점',lat:37.5326,lng:126.9886,addr:'서울 용산구 한강로',tags:['영업중 ~21:00','프리미엄관']}
+];
+
+var CHAT_CATS=[{id:'all',label:'전체'},{id:'trace',label:'생산이력'},{id:'discount',label:'할인·혜택'},{id:'store',label:'매장·재고'},{id:'recipe',label:'레시피'},{id:'farm',label:'농가소통'},{id:'safe',label:'안전·인증'}];
+var CHAT_QA={
+all:['농약 안 친 채소 어떻게 알 수 있어요?','이번 주 할인 상품 알려줘','브로콜리 생산이력 보고 싶어','우리 동네 하나로마트 재고 확인','오늘 저녁 채소 반찬 레시피','단골 농가에 질문 남기고 싶어','샤인머스켓 당도 얼마예요?','무농약 인증 믿을 수 있나요?'],
+trace:['브로콜리 생산이력 보고 싶어','사과 언제 수확했어요?','샤인머스켓 당도 얼마예요?','당근 어떤 농가에서 왔어요?','옥수수 농약 사용 여부 확인','양파 재배 기간이 얼마나 됐어요?'],
+discount:['이번 주 할인 상품 알려줘','채소 30% 할인 어디서 해요?','내 구매패턴 기반 쿠폰 있어요?','오늘 특가 상품 뭐 있어요?','포인트로 살 수 있는 상품은?'],
+store:['우리 동네 하나로마트 재고 확인','브로콜리 재고 있는 매장 알려줘','가장 가까운 매장 어디예요?','매장 영업시간 알려줘','로컬푸드 특설관 있는 매장은?'],
+recipe:['오늘 저녁 채소 반찬 레시피','브로콜리로 만들 수 있는 요리','아이 반찬으로 좋은 채소 레시피','냉장고 채소 처리법 알려줘','제철 채소 활용 레시피'],
+farm:['단골 농가에 질문 남기고 싶어','전남해남 자연농원 소식 궁금해','농가에 리뷰 남길 수 있어요?','이 농가 다른 상품도 있어요?','농가 직배송 가능한가요?'],
+safe:['농약 안 친 채소 어떻게 알 수 있어요?','무농약 인증 믿을 수 있나요?','IoT 센서로 뭘 감지해요?','블록체인 이력 조작 불가능한가요?','GAP 인증이 뭐예요?','유기농과 무농약 차이가 뭐예요?']
+};
+var BOT={
+'농약 안 친 채소 어떻게 알 수 있어요?':'좋은 질문이에요! 🌱\n\n생산이력 탭에서 바로 확인하실 수 있어요.\n\n• IoT 화학물질 감지 센서가 24시간 자동 기록\n• 사람이 입력하는 게 아니라 센서가 직접 측정\n• 블록체인 타임스탬프로 소급 수정 불가\n\n현재 판매 중인 6가지 상품 모두 농약 감지 0건입니다! ✅',
+'이번 주 할인 상품 알려줘':'이번 주 특가 상품이에요! 💰\n\n• 🥦 브로콜리 (전남 해남) — 10% 할인\n• 🥬 시금치 (전남 나주) — 20% 할인\n• 🧅 양파 (경남 창녕) — 15% 할인\n• 🥕 당근 (제주) — 10% 할인\n\n모두 IoT 무농약 인증 제품이에요!',
+'브로콜리 생산이력 보고 싶어':'전남 해남 자연농원 유기농 브로콜리 이력이에요! 🥦\n\n코드: HM-2025-04821\n파종: 2025.02.10\n드론 촬영: 12회\n농약 감지: 0건\n수확: 2025.05.08\n입고: 2025.05.12\n\n생산이력 탭에서 전체 타임라인을 확인하세요!',
+'우리 동네 하나로마트 재고 확인':'현재 위치 기반으로 확인했어요! 🏪\n\n홍은점\n• 유기농 브로콜리 — 12개 ✅\n• 사과 부사 — 28개 ✅\n• 샤인머스켓 — 8개 ✅\n\n은평점 (채소 30% 할인 중!)\n• 햇 양파 — 45개 ✅\n• 국산 당근 — 22개 ✅\n\n매장 탭에서 실시간 지도를 확인하세요!',
+'오늘 저녁 채소 반찬 레시피':'구매이력 기반 맞춤 레시피예요! 🍳\n\n✨ 브로콜리 들깨 볶음\n• 브로콜리 200g + 마늘 3쪽\n• 들기름 1.5스푼으로 3분 볶기\n• 들깨가루 2스푼 마무리\n\n✨ 당근 사과 샐러드\n• 당근 1개 + 사과 반개 채 썰기\n• 레몬즙 + 올리브오일 + 소금',
+'단골 농가에 질문 남기고 싶어':'농가 질문 기능을 안내드릴게요! 🌾\n\n구독 중인 농가:\n• 전남해남 자연농원 (브로콜리)\n• 경북 영주 과수원 (사과)\n• 홍성 자연농원 (쌈채소)\n\n질문 방법:\n1. 생산이력 탭 → 상품 선택\n2. 농가에 질문하기 버튼\n3. 24시간 내 농가 직접 답변',
+'샤인머스켓 당도 얼마예요?':'경북 상주 포도연구소농원 샤인머스켓이에요! 🍇\n\n당도: 20 Brix (매우 달콤)\n알 크기: 균일 대과\n수확일: 2025.05.08\nGAP 인증: 통과 ✅\n농약 감지: 0건 ✅\n\n생산이력 탭에서 전체 기록을 확인해 보세요!',
+'무농약 인증 믿을 수 있나요?':'신뢰 구조를 설명드릴게요! 🛡️\n\n기존 방식의 문제:\n❌ 농민이 직접 기록 → 조작 가능\n❌ 서류 인증 → 사후 검증 불가\n\n하나로마트 새 방식:\n✅ IoT 감지 센서 24시간 자동 측정\n✅ 블록체인 타임스탬프로 수정 불가\n✅ 농촌진흥청 데이터와 교차 검증\n\n기록하지 않고 측정하게 합니다',
+'IoT 센서로 뭘 감지해요?':'하나로마트 연동 IoT 센서 목록이에요! 📡\n\n토양 센서:\n• pH (산도) · 수분 · 온도\n\n대기 환경:\n• 기온 · 습도 · 강수량\n• 국가 기상 API 연동\n\n핵심:\n🛡️ 화학물질(농약) 감지 센서\n— 살포 즉시 감지 후 블록체인 자동 기록',
+'블록체인 이력 조작 불가능한가요?':'블록체인 무결성 구조예요! 🔒\n\n• 모든 기록이 연결된 체인 구조\n• 하나를 수정하면 전체 해시값 변경\n• 네트워크 참여자 모두가 검증\n\n적용:\n1. IoT 센서 데이터 자동 수집\n2. 타임스탬프와 함께 블록 기록\n3. 수정·삭제 구조적으로 불가\n\n조작하려면 전체 블록체인을 바꿔야 합니다.',
+'GAP 인증이 뭐예요?':'GAP(농산물 우수관리) 인증이에요! 📋\n\n인증 기준:\n✅ 농약 안전 사용 기준 준수\n✅ 재배 환경 위생 관리\n✅ 수확 후 관리 기준 충족\n✅ 농촌진흥청 현장 심사 통과\n\n하나로마트 차이점:\nGAP + IoT 실시간 검증\n→ 이중 안전장치!',
+'유기농과 무농약 차이가 뭐예요?':'헷갈리기 쉬운 개념이에요! 🌿\n\n무농약:\n• 화학 농약 사용 금지\n• 화학 비료는 소량 가능\n\n유기농:\n• 화학 농약 + 화학 비료 모두 금지\n• 유기질 비료만 사용\n• 인증 기간 3년 이상 필요\n\n공통점: 모두 IoT로 실시간 검증 중!',
+'사과 언제 수확했어요?':'경북 영주 과수원 사과 (부사) 이력이에요! 🍎\n\n코드: HM-2025-03912\n묘목 식재: 2024.04.05\n드론 촬영: 24회\n수확: 2025.04.28 (당도 14 Brix)\n입고: 2025.05.02\n\n수확 후 2주 이내 판매 중인 신선 상품이에요!',
+'당근 어떤 농가에서 왔어요?':'제주 당근 농가 정보예요! 🥕\n\n농가명: 제주 애월 하나로농원\n위치: 제주시 애월읍 (해발 150m)\n재배 방식: 제주 화산토 자연재배\n화학비료: 미사용 ✅\n\n제주 화산토 특성상 미네랄 함량이 높아 단맛이 강한 당근이에요!',
+'옥수수 농약 사용 여부 확인':'강원 홍천 찰옥수수 농약 정보예요! 🌽\n\n🛡️ 농약 감지 결과: 0건\n감지 기간: 2025.04.18 ~ 현재\n감지 센서: IoT 화학물질 센서\n✅ 블록체인 기록: 완료\n\n당일 수확 → 당일 입고 시스템으로 최고 신선도를 유지합니다!',
+'양파 재배 기간이 얼마나 됐어요?':'경남 창녕 햇 양파 재배 정보예요! 🧅\n\n파종: 2024년 10월 12일\n수확: 2025년 5월 3일\n재배 기간: 약 7개월 (월동 재배)\n\n창녕 양파는 한국 최대 산지로,\n• 겨울 월동으로 조직이 단단\n• 드론 모니터링 8회 완료\n• 상품률 96%',
+'채소 30% 할인 어디서 해요?':'채소 30% 할인 매장이에요! 🎉\n\n📍 하나로마트 은평점\n서울 은평구 역촌동\n영업시간: ~20:00\n\n할인 품목:\n• 햇 양파 30% 할인\n• 시금치 20% 할인\n• 브로콜리 10% 할인\n\n매장 탭에서 지도로 확인하세요!',
+'내 구매패턴 기반 쿠폰 있어요?':'구매 데이터 분석 결과예요! 🎟️\n\n김농협 고객님 전용:\n\n🎟️ 채소류 15% 할인쿠폰\n• 채소 구매 비율 72% 분석\n• 사용 기간: 2025.05.14 ~ 05.20\n\n🎟️ 무농약 상품 10% 쿠폰\n• IoT 인증 상품 선호 패턴\n\nMY 탭에서 쿠폰함을 확인하세요!',
+'오늘 특가 상품 뭐 있어요?':'오늘의 특가 상품이에요! 🔥\n\n• 🥦 유기농 브로콜리 — 10% 할인\n• 🥕 제주 당근 — 5% 할인\n• 🍇 샤인머스켓 — 8% 할인 (한정)\n• 🌽 찰옥수수 — 당일 수확 특가\n\n모두 IoT 이력 확인 가능 상품이에요!',
+'포인트로 살 수 있는 상품은?':'포인트 사용 가능 상품이에요! 💚\n\n보유 포인트: 12,400P\n\n사용 가능:\n• 모든 로컬푸드 상품 (1P = 1원)\n• 단골 농가 직배송 상품\n• IoT 인증 친환경 상품\n\n추천: 유기농 브로콜리 (3,200P)',
+'브로콜리 재고 있는 매장 알려줘':'브로콜리 재고 현황이에요! 🥦\n\n• 홍은점 — 12개 ✅ (0.8km)\n• 서대문점 — 8개 ✅ (1.2km)\n• 마포점 — 15개 ✅ (2.8km)\n• 은평점 — 3개 ⚠️ (소량)\n• 용산점 — 20개 ✅ (4.2km)\n\n가장 가까운 홍은점을 추천해요!',
+'가장 가까운 매장 어디예요?':'위치 기반으로 찾아봤어요! 📍\n\n🏆 하나로마트 홍은점\n• 서울 서대문구 홍은동\n• 영업시간: ~21:00\n• 로컬푸드 입고 중\n• 이번 주 주말 할인전 진행!\n\n매장 탭에서 지도로 확인하세요!',
+'매장 영업시간 알려줘':'하나로마트 영업시간이에요! 🕐\n\n• 홍은점: 09:00 ~ 21:00\n• 은평점: 09:00 ~ 20:00\n• 마포점: 09:00 ~ 21:30\n• 서대문점: 09:00 ~ 20:30\n• 용산점: 09:00 ~ 21:00\n\n로컬푸드 신선 상품은 오전 11시 이후 입고됩니다.',
+'로컬푸드 특설관 있는 매장은?':'로컬푸드 특설관 운영 매장이에요! 🌾\n\n✅ 마포점 — 친환경 특설관\n✅ 홍은점 — 로컬푸드 상시 입고\n✅ 서대문점 — 로컬푸드 신상 코너\n\n특설관 특징:\n• 농가 직배송 당일 입고\n• QR 코드로 생산이력 즉시 확인\n• 가격표에 IoT 인증 마크',
+'브로콜리로 만들 수 있는 요리':'브로콜리 레시피 3가지예요! 🥦\n\n1️⃣ 브로콜리 들깨 볶음 (5분)\n마늘 → 들기름 볶기 → 브로콜리 → 들깨가루\n\n2️⃣ 브로콜리 달걀 볶음밥 (10분)\n밥 + 달걀 + 브로콜리 + 간장\n\n3️⃣ 브로콜리 크림수프 (15분)\n삶기 → 블렌더 → 우유 추가',
+'아이 반찬으로 좋은 채소 레시피':'아이 반찬 채소 레시피예요! 👶\n\n1️⃣ 당근 사과 조림\n당근 + 사과 + 꿀 조금\n\n2️⃣ 브로콜리 치즈구이\n브로콜리 + 피자치즈 → 에어프라이어 8분\n\n3️⃣ 옥수수 달걀찜\n찰옥수수 + 달걀 + 소금\n\n모두 무농약·IoT 인증 상품!',
+'냉장고 채소 처리법 알려줘':'냉장고 채소 활용 레시피예요! 🌿\n\n남은 채소 → 채소 볶음밥:\n당근 + 양파 + 브로콜리 + 달걀 2개\n→ 강불에 5분 볶기\n\n남은 채소 → 된장찌개:\n당근 + 양파 + 시금치 + 된장\n→ 끓이기 10분',
+'제철 채소 활용 레시피':'5월 제철 채소 레시피예요! 🌱\n\n5월 제철: 🥦 브로콜리 · 🧅 양파 · 🌽 옥수수\n\n✨ 봄 채소 비빔밥\n브로콜리 + 당근 + 시금치\n+ 밥 + 참기름 + 고추장\n\n✨ 양파 수프\n양파 2개 볶기 → 물 + 버터\n→ 달콤하고 부드러운 수프',
+'전남해남 자연농원 소식 궁금해':'전남해남 자연농원 최신 소식이에요! 🌿\n\n(2025.05.12)\n"5월 브로콜리 수확이 완료되었습니다.\n드론 모니터링으로 무농약 기준을 완벽히 지켰어요.\n별점 4.8점에 감사드립니다!"\n\n다음 입고 예정:\n• 5월 20일 — 여름 시금치\n• 6월 초 — 아욱',
+'농가에 리뷰 남길 수 있어요?':'네, 가능해요! 📝\n\n방법:\n1. 생산이력 탭에서 상품 선택\n2. 하단 별점 평가\n3. 제출 → 농가에 즉시 전달\n\n이번 달 전달된 리뷰: 284건\n평균 응답 시간: 18시간',
+'이 농가 다른 상품도 있어요?':'전남해남 자연농원 다른 상품이에요! 🥬\n\n현재 판매:\n• 유기농 브로콜리 (3,200원)\n• 유기농 시금치 (2,100원) — 10% 할인\n\n다음 입고 예정:\n• 유기농 아욱 (6월 초)\n• 유기농 가지 (6월 말)\n\nMY 탭 → 단골 농가에서 구독 가능!',
+'농가 직배송 가능한가요?':'농가 직배송 안내예요! 🚚\n\n가능 농가:\n✅ 전남해남 자연농원\n✅ 경북 영주 과수원\n✅ 제주 애월 하나로농원\n\n조건:\n• 최소 주문: 30,000원\n• 배송 기간: 수확 후 1~2일\n• 배송비: 3,000원 (50,000원 이상 무료)\n\n직배송도 IoT 이력 확인 가능!'
+};
+
+var META={home:{title:'홈 대시보드',sub:'오늘의 신선 농산물 정보'},trace:{title:'생산이력 추적',sub:'IoT 자동기록 · 블록체인 검증'},chat:{title:'AI 소통 상담',sub:'구매이력 분석 기반 맞춤 답변'},store:{title:'매장 찾기',sub:'실시간 위치 · 재고 · 행사 정보'},my:{title:'MY 페이지',sub:'데이터 기반 맞춤 서비스'}};
+
+var currentProd='broccoli',currentCat='all',mapDone=false;
+
+function $(id){return document.getElementById(id);}
+function showToast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+
+function navTo(id){
+  var pages=document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');
+  var btns=document.querySelectorAll('.nav-btn');
+  for(var j=0;j<btns.length;j++)btns[j].classList.remove('active');
+  var pg=$('page-'+id);if(pg)pg.classList.add('active');
+  var sel=document.querySelectorAll('[data-page="'+id+'"]');
+  for(var k=0;k<sel.length;k++)sel[k].classList.add('active');
+  if(META[id]){$('top-title').textContent=META[id].title;$('top-sub').textContent=META[id].sub;}
+  var c=document.querySelector('.content');if(c)c.scrollTop=0;
+  if(id==='store'&&!mapDone){mapDone=true;setTimeout(initMap,80);}
+}
+
+function bindNav(){
+  var btns=document.querySelectorAll('.nav-btn');
+  for(var i=0;i<btns.length;i++){
+    var b=btns[i],pid=b.getAttribute('data-page');
+    if(!pid)continue;
+    (function(p,btn){
+      btn.addEventListener('click',function(){navTo(p);});
+      btn.addEventListener('touchend',function(e){e.preventDefault();navTo(p);},{passive:false});
+    })(pid,b);
+  }
+}
+
+function buildHomeGrid(){
+  var wrap=$('home-prod-grid');if(!wrap)return;
+  wrap.innerHTML='';
+  var ids=Object.keys(PRODS);
+  for(var i=0;i<ids.length;i++){
+    var id=ids[i],p=PRODS[id];
+    var card=document.createElement('div');
+    card.className='prod-card';
+    card.innerHTML='<div class="prod-img">'+p.ico+(p.badge?'<span class="prod-badge">'+p.badge+'</span>':'')+'</div>'+
+    '<div class="prod-body"><div class="prod-name">'+p.name+'</div><div class="prod-origin">📍 '+p.origin+'</div><div class="prod-price">'+p.price+'</div><button class="prod-btn">🔍 생산이력 보기</button></div>';
+    (function(pid,el){
+      el.addEventListener('click',function(){currentProd=pid;renderTrace();navTo('trace');var tabs=document.querySelectorAll('.prod-tab');for(var x=0;x<tabs.length;x++){tabs[x].classList.toggle('active',tabs[x].getAttribute('data-pid')===pid);}});
+      el.addEventListener('touchend',function(e){e.preventDefault();currentProd=pid;renderTrace();navTo('trace');var tabs=document.querySelectorAll('.prod-tab');for(var x=0;x<tabs.length;x++){tabs[x].classList.toggle('active',tabs[x].getAttribute('data-pid')===pid);}},{passive:false});
+    })(id,card);
+    wrap.appendChild(card);
+  }
+}
+
+function buildTraceTabs(){
+  var wrap=$('prod-tabs');if(!wrap)return;
+  wrap.innerHTML='';
+  var ids=Object.keys(PRODS);
+  for(var i=0;i<ids.length;i++){
+    var id=ids[i];
+    var btn=document.createElement('button');
+    btn.className='prod-tab'+(id===currentProd?' active':'');
+    btn.setAttribute('data-pid',id);
+    btn.textContent=PRODS[id].tab;
+    (function(pid,b){
+      function tap(){currentProd=pid;var tabs=document.querySelectorAll('.prod-tab');for(var x=0;x<tabs.length;x++)tabs[x].classList.remove('active');b.classList.add('active');renderTrace();}
+      b.addEventListener('click',tap);
+      b.addEventListener('touchend',function(e){e.preventDefault();tap();},{passive:false});
+    })(id,btn);
+    wrap.appendChild(btn);
+  }
+}
+
+function renderTrace(){
+  var p=PRODS[currentProd];if(!p)return;
+  var tagsHtml='';for(var i=0;i<p.tags.length;i++){var t=p.tags[i];tagsHtml+='<span class="trace-tag'+(t.charAt(0)==='✓'?' hl':'')+'">'+t+'</span>';}
+  $('trace-hero-wrap').innerHTML='<div class="trace-hero"><div class="trace-ico">'+p.ico+'</div><div><div class="trace-name">'+p.name+'</div><div class="trace-code">'+p.code+' · '+p.farm+'</div><div class="trace-tags">'+tagsHtml+'</div></div></div>';
+  var iotHtml='';for(var j=0;j<p.iot.length;j++){var s=p.iot[j];iotHtml+='<div class="iot-card"><div class="iot-ico">'+s.ico+'</div><div class="iot-val" style="color:'+s.c+'">'+s.val+'</div><div class="iot-lbl">'+s.lbl+'</div><div class="iot-st">'+s.st+'</div></div>';}
+  $('iot-wrap').innerHTML=iotHtml;
+  var tlHtml='';
+  for(var k=0;k<p.tl.length;k++){
+    var t=p.tl[k],isLast=k===p.tl.length-1;
+    var dotCls=t.now?'tl-dot now':(t.done?'tl-dot done':'tl-dot');
+    var chips='';var cs=t.chips.split(',');
+    for(var m=0;m<cs.length;m++){var c=cs[m].split(':');chips+='<span class="tl-chip '+c[0]+'">'+c[1]+'</span>';}
+    tlHtml+='<div class="tl-row"><div class="tl-spine"><div class="'+dotCls+'"></div>'+(isLast?'':'<div class="tl-line"></div>')+'</div><div class="tl-box'+(t.now?' now':'')+'"><div class="tl-ttl"'+(t.now?' style="color:var(--orange)"':'')+'>'+t.ttl+'</div><div class="tl-date">'+t.date+'</div><div class="tl-detail">'+t.detail+'</div><div class="tl-chips">'+chips+'</div></div></div>';
+  }
+  $('tl-wrap').innerHTML=tlHtml;
+  $('rate-title').textContent=p.name+' 품질을 평가해 주세요';
+  $('rate-sub').textContent=p.farm+'에 실시간 전달됩니다';
+  var stars=document.querySelectorAll('.star');for(var n=0;n<stars.length;n++)stars[n].classList.remove('on');
+}
+
+function initStars(){
+  var stars=document.querySelectorAll('.star');
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i],n=parseInt(s.getAttribute('data-n'));
+    (function(num){
+      function tap(){var all=document.querySelectorAll('.star');for(var x=0;x<all.length;x++){all[x].classList.toggle('on',parseInt(all[x].getAttribute('data-n'))<=num);}}
+      s.addEventListener('click',tap);
+      s.addEventListener('touchend',function(e){e.preventDefault();tap();},{passive:false});
+    })(n);
+  }
+  var rb=$('rate-btn');
+  if(rb){
+    function rateTap(){showToast('⭐ 평가가 '+PRODS[currentProd].farm+'에 전달되었습니다!');}
+    rb.addEventListener('click',rateTap);
+    rb.addEventListener('touchend',function(e){e.preventDefault();rateTap();},{passive:false});
+  }
+}
+
+function getDistKm(a,b,c,d){var R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180;var x=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)*Math.sin(dG/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+
+function initMap(){
+  var st=$('map-status');if(st)st.textContent='현재 위치를 불러오는 중...';
+  function done(lat,lng,label){
+    if(st)st.textContent=label;
+    var sorted=[];for(var i=0;i<STORES.length;i++){var s=STORES[i];var d=getDistKm(lat,lng,s.lat,s.lng);sorted.push({name:s.name,lat:s.lat,lng:s.lng,addr:s.addr,tags:s.tags,dist:d<1?Math.round(d*1000)+'m':d.toFixed(1)+'km',distNum:d});}
+    sorted.sort(function(a,b){return a.distNum-b.distNum;});
+    drawMap(lat,lng,sorted);renderStoreList(sorted);
+  }
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(p){done(p.coords.latitude,p.coords.longitude,'📍 현재 위치 확인 완료');},
+      function(){done(37.5665,126.9780,'⚠️ 위치 권한 거부 — 서울 기준 표시');},
+      {timeout:8000,maximumAge:60000}
+    );
+  } else done(37.5665,126.9780,'⚠️ 위치 서비스 미지원 — 서울 기준 표시');
+}
+
+function drawMap(uLat,uLng,stores){
+  var canvas=$('map-canvas');if(!canvas)return;
+  var W=canvas.parentElement?canvas.parentElement.offsetWidth:360;
+  if(W<10)W=360;
+  var H=220,dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  var ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  var lats=[uLat],lngs=[uLng];for(var i=0;i<stores.length;i++){lats.push(stores[i].lat);lngs.push(stores[i].lng);}
+  var minLat=Math.min.apply(null,lats)-0.015,maxLat=Math.max.apply(null,lats)+0.015;
+  var minLng=Math.min.apply(null,lngs)-0.015,maxLng=Math.max.apply(null,lngs)+0.015;
+  var pad=30;
+  function xy(lat,lng){return [pad+(lng-minLng)/(maxLng-minLng)*(W-pad*2),pad+(maxLat-lat)/(maxLat-minLat)*(H-pad*2)];}
+  var g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#e8f5e9');g.addColorStop(1,'#c8e6c9');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1;
+  for(var x=1;x<4;x++){ctx.beginPath();ctx.moveTo(W*x/4,0);ctx.lineTo(W*x/4,H);ctx.stroke();}
+  for(var y=1;y<3;y++){ctx.beginPath();ctx.moveTo(0,H*y/3);ctx.lineTo(W,H*y/3);ctx.stroke();}
+  for(var k=0;k<stores.length;k++){
+    var p=xy(stores[k].lat,stores[k].lng),r=k===0?11:8;
+    ctx.beginPath();ctx.arc(p[0],p[1]+2,r,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.12)';ctx.fill();
+    ctx.beginPath();ctx.arc(p[0],p[1],r,0,Math.PI*2);ctx.fillStyle=k===0?'#1B4332':'#40916C';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();
+    ctx.font=(r>9?'11':'9')+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText('🏪',p[0],p[1]);
+    var sh=stores[k].name.replace('하나로마트 ','').replace('점','');
+    ctx.font='bold 8px sans-serif';ctx.textBaseline='top';
+    var tw=ctx.measureText(sh).width+6;ctx.fillStyle='rgba(255,255,255,0.88)';ctx.fillRect(p[0]-tw/2,p[1]+r+2,tw,12);
+    ctx.fillStyle='#1B4332';ctx.fillText(sh,p[0],p[1]+r+3);
+  }
+  var up=xy(uLat,uLng);
+  ctx.beginPath();ctx.arc(up[0],up[1],14,0,Math.PI*2);ctx.fillStyle='rgba(29,78,216,0.15)';ctx.fill();
+  ctx.beginPath();ctx.arc(up[0],up[1],8,0,Math.PI*2);ctx.fillStyle='#1D4ED8';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();
+  ctx.font='9px serif';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText('📍',up[0],up[1]);
+}
+
+function renderStoreList(stores){
+  var wrap=$('store-list');if(!wrap)return;
+  wrap.innerHTML='';
+  for(var i=0;i<stores.length;i++){
+    var s=stores[i],card=document.createElement('div');
+    card.className='store-card'+(i===0?' nearest':'');
+    var tagsHtml='';for(var j=0;j<s.tags.length;j++){var t=s.tags[j];tagsHtml+='<span class="stag '+(t.indexOf('할인')>-1||t.indexOf('신상')>-1?'o':'g')+'">'+t+'</span>';}
+    card.innerHTML='<div class="store-ico">🏪</div><div style="flex:1"><div class="store-nm">'+s.name+(i===0?' 🏆':'')+'</div><div class="store-dist">'+s.dist+(i===0?' · 가장 가까운 매장':'')+'</div><div class="store-addr">'+s.addr+'</div><div class="store-tags">'+tagsHtml+'</div></div>';
+    wrap.appendChild(card);
+  }
+}
+
+function appendBot(html,withTyping){
+  var box=$('chat-msgs');if(!box)return;
+  function append(){var d=document.createElement('div');d.className='mw';d.innerHTML='<div class="mav">🤖</div><div><div class="mtime">방금</div><div class="bbl bot">'+html.replace(/\n/g,'<br>')+'</div></div>';box.appendChild(d);box.scrollTop=99999;}
+  if(withTyping===false){append();return;}
+  var tw=document.createElement('div');tw.className='mw';tw.innerHTML='<div class="mav">🤖</div><div class="typing"><span></span><span></span><span></span></div>';
+  box.appendChild(tw);box.scrollTop=99999;
+  setTimeout(function(){if(tw.parentNode)tw.parentNode.removeChild(tw);append();},700);
+}
+function addUser(q){
+  var box=$('chat-msgs');if(!box)return;
+  var d=document.createElement('div');d.className='mw u';
+  d.innerHTML='<div class="mav">👤</div><div><div class="mtime">방금</div><div class="bbl usr">'+q+'</div></div>';
+  box.appendChild(d);box.scrollTop=99999;
+  appendBot(BOT[q]||'데이터를 분석하고 있어요... 잠시만요! 😊\n\n생산이력, 할인 정보, 레시피, 매장 재고 등 언제든 물어봐 주세요!',true);
+}
+
+function buildChatCats(){
+  var wrap=$('chat-cats');if(!wrap)return;
+  wrap.innerHTML='';
+  for(var i=0;i<CHAT_CATS.length;i++){
+    var c=CHAT_CATS[i],b=document.createElement('button');
+    b.className='cat-btn'+(c.id===currentCat?' active':'');
+    b.textContent=c.label;
+    (function(cid,btn){
+      function tap(){currentCat=cid;var all=document.querySelectorAll('.cat-btn');for(var x=0;x<all.length;x++)all[x].classList.remove('active');btn.classList.add('active');renderChips(cid);}
+      btn.addEventListener('click',tap);
+      btn.addEventListener('touchend',function(e){e.preventDefault();tap();},{passive:false});
+    })(c.id,b);
+    wrap.appendChild(b);
+  }
+}
+
+function renderChips(cat){
+  var wrap=$('chip-wrap');if(!wrap)return;
+  wrap.innerHTML='';
+  var qs=CHAT_QA[cat]||CHAT_QA.all;
+  for(var i=0;i<qs.length;i++){
+    var q=qs[i],b=document.createElement('button');
+    b.className='chip';b.textContent=q;
+    (function(question){
+      b.addEventListener('click',function(){addUser(question);});
+      b.addEventListener('touchend',function(e){e.preventDefault();addUser(question);},{passive:false});
+    })(q);
+    wrap.appendChild(b);
+  }
+}
+
+function initChat(){
+  var msgs=$('chat-msgs');if(!msgs)return;
+  msgs.innerHTML='';
+  appendBot('안녕하세요 김농협 고객님! 😊\n\n이달에 <strong>녹색 채소류</strong>를 자주 구매하시는군요.\n아래 카테고리에서 주제를 선택하거나 직접 입력해 보세요!',false);
+  buildChatCats();renderChips('all');
+  var inp=$('chat-input'),snd=$('send-btn');
+  function send(){var v=inp?inp.value.trim():'';if(!v)return;addUser(v);inp.value='';}
+  if(snd){snd.addEventListener('click',send);snd.addEventListener('touchend',function(e){e.preventDefault();send();},{passive:false});}
+  if(inp){inp.addEventListener('keydown',function(e){if(e.key==='Enter')send();});}
+}
+
+function init(){
+  try{
+    bindNav();
+    buildHomeGrid();
+    buildTraceTabs();
+    renderTrace();
+    initStars();
+    initChat();
+  }catch(e){
+    console.error('초기화 오류:',e);
+  }
+}
+
+if(document.readyState==='complete'||document.readyState==='interactive'){
+  setTimeout(init,0);
+}else{
+  document.addEventListener('DOMContentLoaded',init);
+}
+
+})();
+</script>
+</body>
+</html>
